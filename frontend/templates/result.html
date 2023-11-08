@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Matching Results</title>
+</head>
+<body>
+    <h1>Job Matching Results</h1>
+    <h3>Your Resume:</h3>
+    <p>{{ user_resume }}</p>
+    <h3>Top Matching Job Positions:</h3>
+    <ul>
+        {% for title, name, similarity in job_data %}
+            <li>{{ title }} at {{ name }} ({{ similarity }}% similarity)</li>
+        {% endfor %}
+    </ul>
+    <a href="/">Back to Home</a>
+</body>
+</html>

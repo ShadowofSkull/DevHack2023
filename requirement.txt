@@ -1,0 +1,7 @@
+tensorflow
+transformers
+datasets
+pandas
+sentence-transformers
+spacy
+flask-ngrok
