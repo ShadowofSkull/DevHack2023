@@ -10,6 +10,8 @@ from spacy.matcher import Matcher
 from spacy.lang.en.stop_words import STOP_WORDS
 from datasets import load_dataset, Dataset
 import numpy as np
+import cv2
+from OCR import process_image, remove_non_text_objects, spell_check, generate_pdf
 
 # Load the SpaCy model
 nlp = spacy.load('en_core_web_sm')
@@ -136,24 +138,26 @@ def index():
 
 @app.route("/api/ocr/", methods=["GET", "POST"])
 def ocr():
-    # Get the uploaded file from the request
-    uploaded_file = request.files["file"]
+    if request.method == 'POST':
+        # Get the uploaded file from the request
+        uploaded_file = request.files["file"]
 
-    # Read the uploaded file as an image using OpenCV
-    image = cv2.imdecode(
-        np.fromstring(uploaded_file.read(), np.uint8), cv2.IMREAD_COLOR
-    )
+        # Read the uploaded file as an image using OpenCV
+        image = cv2.imdecode(
+            np.fromstring(uploaded_file.read(), np.uint8), cv2.IMREAD_COLOR
+        )
 
-    # Preprocess and extract text from the image
-    text = process_image(image)
+        # Preprocess and extract text from the image
+        text = process_image(image)
 
-    # Remove non-text objects and detect text
-    detected_text = remove_non_text_objects(text)
+        # Remove non-text objects and detect text
+        detected_text = remove_non_text_objects(text)
 
-    # Perform spell checking on the detected text
-    corrected_text = spell_check(detected_text)
+        # Perform spell checking on the detected text
+        corrected_text = spell_check(detected_text)
 
-    return render_template("index.html")
+        return render_template("index.html")
+    return render_template("result.html", )
 
 if __name__ == '__main__':
     app.run()
