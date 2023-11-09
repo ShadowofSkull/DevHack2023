@@ -134,7 +134,7 @@ def index():
 
     return render_template('index.html')
 
-@app.route("/ocr/", methods=["GET", "POST"])
+@app.route("/api/ocr/", methods=["GET", "POST"])
 def ocr():
     # Get the uploaded file from the request
     uploaded_file = request.files["file"]
@@ -153,7 +153,7 @@ def ocr():
     # Perform spell checking on the detected text
     corrected_text = spell_check(detected_text)
 
-    return render_template
+    return render_template("index.html")
 
 if __name__ == '__main__':
     app.run()
