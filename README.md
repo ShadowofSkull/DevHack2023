@@ -16,3 +16,6 @@ cd frontend
 python run.py
 ```
 4. `Ctrl + Left Click` the url in the console to open up the website and test the function
+
+### Side note
+- Files in gcolab folder are just experiments and not the product 
