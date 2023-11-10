@@ -155,7 +155,7 @@ def ocr():
         # Get file from POST request and save it
         f = request.files['file']
         f.save(f.filename)  
-        
+
         # Using PyMuPDF to convert PDF to text
         path = os.path.abspath(f'.\{f.filename}')
         text = pdf_to_text(path)
@@ -198,9 +198,6 @@ def ocr():
         
         return render_template('result.html', user_resume=res, job_data=job_data)
 
-@app.route("/loading", methods=["GET"])
-def loading():
-    return render_template('loading.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
