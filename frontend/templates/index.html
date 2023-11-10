@@ -1,21 +1,24 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Job Matching App</title>
 </head>
+
 <body>
     <h1>Job Matching App</h1>
-    <form method="POST">
+    <form action="/" method="POST">
         <label for="resume">Enter your resume:</label><br>
         <textarea name="resume" rows="10" cols="50"></textarea><br><br>
         <input type="submit" value="Submit">
     </form>
 
     <h2>Upload PDF</h2>
-    <form action="/api/ocr" method="POST" enctype="multipart/form-data">
+    <form action="/ocr" method="POST" enctype="multipart/form-data">
         <input type="file" name="file" accept=".pdf">
         <br>
         <button type="submit">Submit</button>
     </form>
 </body>
+
 </html>

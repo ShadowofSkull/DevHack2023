@@ -5,7 +5,4 @@ pandas
 sentence-transformers
 spacy
 flask-ngrok
-numpy
-opencv-python
-pytesseract
-pyspellchecker
+pymupdf

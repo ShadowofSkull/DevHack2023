@@ -1,17 +1,15 @@
-
 # Import necessary libraries
+import os
+import fitz
 import spacy
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for
 from sentence_transformers import SentenceTransformer, util
 from string import punctuation
 from collections import Counter
 from heapq import nlargest
 from spacy.matcher import Matcher
 from spacy.lang.en.stop_words import STOP_WORDS
-from datasets import load_dataset, Dataset
-import numpy as np
-import cv2
-from OCR import process_image, remove_non_text_objects, spell_check, generate_pdf
+from datasets import load_dataset, Dataset 
 
 # Load the SpaCy model
 nlp = spacy.load('en_core_web_sm')
@@ -19,7 +17,21 @@ nlp = spacy.load('en_core_web_sm')
 # Load the Sentence Transformer model
 model = SentenceTransformer('BAAI/bge-large-en-v1.5')
 
+# Load the dataset
+job = load_dataset("jacob-hugging-face/job-descriptions")
+
 app = Flask(__name__)
+
+# Convert PDF to text function
+def pdf_to_text(pdf_path):
+    text = ''
+    with fitz.open(pdf_path) as pdf_document:
+
+      for page_num in range(pdf_document.page_count):
+          page = pdf_document[page_num]
+          text += page.get_text()
+
+    return text
 
 # Define your summarizer function (you can reuse your existing code)
 def summarizer(text):
@@ -65,7 +77,7 @@ def summarizer(text):
     for word in freq_word.keys():
         freq_word[word] = (freq_word[word]/max_freq)
     
-    print(freq_word.most_common(20))
+    # print(freq_word.most_common(20))
     sent_strength={}
     for sent in doc.sents:
         for word in sent:
@@ -87,11 +99,12 @@ def summarizer(text):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        job = load_dataset("jacob-hugging-face/job-descriptions")
-        model = SentenceTransformer('BAAI/bge-large-en-v1.5')
+        # job = load_dataset("jacob-hugging-face/job-descriptions")
+        # model = SentenceTransformer('BAAI/bge-large-en-v1.5')
 
         res = request.form['resume']
 
+    
         res = res.strip().lower()
         res = summarizer(res)
 
@@ -136,28 +149,58 @@ def index():
 
     return render_template('index.html')
 
-@app.route("/api/ocr/", methods=["GET", "POST"])
+@app.route("/ocr", methods=["POST"])
 def ocr():
     if request.method == 'POST':
-        # Get the uploaded file from the request
-        uploaded_file = request.files["file"]
+        # Get file from POST request and save it
+        f = request.files['file']
+        f.save(f.filename)  
+        
+        # Using PyMuPDF to convert PDF to text
+        path = os.path.abspath(f'.\{f.filename}')
+        text = pdf_to_text(path)
+        # Remove the file after processing
+        os.remove(f.filename)
+        # Summarize the text
+        res = summarizer(text)
+        # Pass the summarized text to the model
+        job_descs = []
+        resumes = []
+        for i in range(25):
+          sum_des = summarizer(job["train"][i]["job_description"])
+          job_descs.append(sum_des)
+          resumes.append(res)
 
-        # Read the uploaded file as an image using OpenCV
-        image = cv2.imdecode(
-            np.fromstring(uploaded_file.read(), np.uint8), cv2.IMREAD_COLOR
-        )
+        #Compute embedding for both lists
+        embeddings1 = model.encode(job_descs, normalize_embeddings=True)
+        embeddings2 = model.encode(resumes, normalize_embeddings=True)
 
-        # Preprocess and extract text from the image
-        text = process_image(image)
+        #Compute cosine-similarities
+        cosine_scores = util.cos_sim(embeddings1, embeddings2)
 
-        # Remove non-text objects and detect text
-        detected_text = remove_non_text_objects(text)
+        scores = []
+        for i in range(25):
+          scores.append(str(cosine_scores[i][i])[7:13])
+        
+        top_scores = nlargest(5, scores)
+        best_jobs = []
+        for i in range(5):
+          idx = scores.index(top_scores[i])
+          best_jobs.append([top_scores[i], idx])
+        
+        job_data = []
+        for i in range(5):
+          title = job["train"][best_jobs[i][1]]["position_title"]
+          name = job["train"][best_jobs[i][1]]["company_name"]
+          similarity = float(best_jobs[i][0]) * 100
+          job_data.append((title, name, similarity))
+          
+        
+        return render_template('result.html', user_resume=res, job_data=job_data)
 
-        # Perform spell checking on the detected text
-        corrected_text = spell_check(detected_text)
-
-        return render_template("index.html")
-    return render_template("result.html", )
+@app.route("/loading", methods=["GET"])
+def loading():
+    return render_template('loading.html')
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
