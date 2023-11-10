@@ -2,7 +2,7 @@
 import os
 import fitz
 import spacy
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template
 from sentence_transformers import SentenceTransformer, util
 from string import punctuation
 from collections import Counter
